@@ -5,9 +5,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
 from dotenv import load_dotenv
+from pathlib import Path
 
 # --- LOAD ENVIRONMENT VARIABLES ---
-load_dotenv()
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, encoding='utf-8')
 
 # --- CONFIGURATION ---
 JSON_FILE = os.getenv("JSON_FILE", "profile.json")
@@ -61,7 +63,18 @@ def send_email(subject, body, to_email):
     msg["From"] = EMAIL
     msg["To"] = to_email
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    # msg.attach(MIMEText(body, "plain"))
+    # HTML template for email
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height:1.6; color:#333;">
+            <p>{body.replace('\n', '<br>')}</p>
+            <p style="margin-top:20px; font-weight:bold;">- Your Daily Motivation App</p>
+        </body>
+    </html>
+    """
+
+    msg.attach(MIMEText(html_body, "html"))
 
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
         server.starttls()
@@ -136,5 +149,6 @@ def motivation():
         raise HTTPException(status_code=400, detail="No about section found")
 
     message = generate_motivation(about)
+    message = message.replace("**", "") 
     send_email(subject="Your Daily Motivation", body=message, to_email="shuaibkaloor123@gmail.com")
     return {"motivation": message, "email_sent_to": "shuaibkaloor123@gmail.com"}
